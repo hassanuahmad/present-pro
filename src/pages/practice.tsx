@@ -55,7 +55,7 @@ export default function LivePracticeMode() {
   const chunksRef = useRef<Blob[]>([]);
 
   const getToken = async () => {
-      const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT_URL}/token`);
+      const response = await fetch(`https://${import.meta.env.VITE_ENDPOINT_URL}/token`);
       const data = await response.json();
       if (data.error) {
           alert(data.error);
@@ -65,7 +65,7 @@ export default function LivePracticeMode() {
 
   const startTranscription = async () => {
       // Initialize WebSocket connection first
-      wsRef.current = new WebSocket(`ws://${import.meta.env.VITE_ENDPOINT_URL}/microphone`);
+      wsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/microphone`);
       
       wsRef.current.onopen = () => {
           console.log('WebSocket Connected');
