@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { FileText, Mic, BarChart } from "lucide-react"
+import { Mic, BarChart, Trophy } from "lucide-react"
 import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router"
@@ -12,9 +12,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const features = [
-    { name: "Prepare", icon: FileText, description: "Create and organize your content", route: "/prepare" },
+    // { name: "Prepare", icon: FileText, description: "Create and organize your content", route: "/prepare" },
     { name: "Practice", icon: Mic, description: "Rehearse with AI feedback", route: "/practice" },
     { name: "Analyze", icon: BarChart, description: "Track your improvement", route: "/analyze" },
+    { name: "Challenges", icon: Trophy, description: "Complete daily tasks", route: "/challenges" },
   ]
 
   return (
