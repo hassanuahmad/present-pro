@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react"
+import { useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mic, Square, RefreshCw } from "lucide-react"
+import { Mic, Square, RefreshCw, ArrowLeft } from "lucide-react"
 import { RealtimeTranscriber } from "assemblyai/streaming"
 import RecordRTC from "recordrtc"
 import { Header } from "@/components/Header"
@@ -12,6 +13,7 @@ const SAMPLE_RATE = 16000;
 
 export default function LivePracticeMode() {
   const wsRef = useRef<WebSocket | null>(null);
+  const navigate = useNavigate()
   let theme = "dark"
   const [isRecording, setIsRecording] = useState(false)
   const [transcript, setTranscript] = useState("")
@@ -224,12 +226,21 @@ export default function LivePracticeMode() {
     >
       <Header theme={theme} />
       <div className="p-6">
-      <Card className={`max-w-4xl mx-auto ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
-        <CardHeader>
+      <Card className={`max-w-6xl mx-auto ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/dashboard")}
+              className={`${theme === "dark" ? "text-gray-300 hover:text-teal-300" : "text-gray-600 hover:text-teal-700"}`}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+            </Button>
+          </div>
           <CardTitle
             className={`text-2xl font-bold text-center ${theme === "dark" ? "text-gray-200" : "text-gray-800"}`}
           >
-            Live Practice Mode v31
+            Live Practice Mode
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -259,18 +270,20 @@ export default function LivePracticeMode() {
           </div>
           <div
             ref={transcriptRef}
-            className={`p-4 rounded-lg h-64 overflow-y-auto ${
+            className={`p-4 rounded-lg h-64 overflow-y-auto whitespace-pre-wrap break-words ${
               theme === "dark" ? "bg-gray-900" : "bg-gray-100"
             }`}
           >
-            {transcript ? transcript.split(/\s+/).map((word, index) => (
-              <span
-                key={index}
-                className={`${fillerWords.includes(word.toLowerCase()) ? 'text-red-500 font-semibold' : ''} mr-1`}
-              >
-                {word}
-              </span>
-            )) : "Transcript will appear here"}
+            <div className="w-full">
+              {transcript ? transcript.split(/\s+/).map((word, index) => (
+                <span
+                  key={index}
+                  className={`${fillerWords.includes(word.toLowerCase()) ? 'text-red-500 font-semibold' : ''} mr-1`}
+                >
+                  {word}
+                </span>
+              )) : "Transcript will appear here"}
+            </div>
           </div>
         </CardContent>
       </Card>
