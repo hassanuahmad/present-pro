@@ -66,7 +66,13 @@ export default function LivePracticeMode() {
     } else if (currentWPM > 160) {
       speedMessage = 'Too Fast';
       // Send vibration when speaking too fast
-      vibrateWsRef.current?.send(JSON.stringify({ type: 'vibrate' }));
+      if (vibrateWsRef.current?.readyState === WebSocket.OPEN) {
+        console.log('Sending vibrate command...');
+        vibrateWsRef.current.send(JSON.stringify({ command: 'vibrate' }));
+      } else {
+        console.log('Vibrate WebSocket not connected, reconnecting...');
+        connectVibrateWs();
+      }
     } else {
       speedMessage = 'Average';
     }
@@ -357,4 +363,3 @@ export default function LivePracticeMode() {
     </div>
   )
 }
-
