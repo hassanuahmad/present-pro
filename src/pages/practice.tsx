@@ -6,12 +6,14 @@ import { Mic, Square, RefreshCw, ArrowLeft } from "lucide-react"
 import { RealtimeTranscriber } from "assemblyai/streaming"
 import RecordRTC from "recordrtc"
 import { Header } from "@/components/Header"
+import { useUser } from "@clerk/clerk-react"
 
 const fillerWords = ["um", "uh", "like", "you know", "actually", "basically", "literally"]
 
 const SAMPLE_RATE = 16000;
 
 export default function LivePracticeMode() {
+  const { user } = useUser();
   const wsRef = useRef<WebSocket | null>(null);
   const vibrateWsRef = useRef<WebSocket | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -41,7 +43,7 @@ export default function LivePracticeMode() {
 
   const connectVibrateWs = () => {
     if (!vibrateWsRef.current || vibrateWsRef.current.readyState !== WebSocket.OPEN) {
-      vibrateWsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/vibrate`);
+      vibrateWsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/vibrate/${user?.id}`);
       vibrateWsRef.current.onopen = () => console.log('Vibrate WebSocket connected');
       vibrateWsRef.current.onerror = (error) => console.error('Vibrate WebSocket error:', error);
       vibrateWsRef.current.onclose = () => console.log('Vibrate WebSocket closed');
@@ -100,7 +102,11 @@ export default function LivePracticeMode() {
   const chunksRef = useRef<Blob[]>([]);
 
   const getToken = async () => {
-      const response = await fetch(`https://${import.meta.env.VITE_ENDPOINT_URL}/token`);
+      const response = await fetch(`https://${import.meta.env.VITE_ENDPOINT_URL}/token`, {
+          headers: {
+              'Authorization': `Bearer ${user?.id}`
+          }
+      });
       const data = await response.json();
       if (data.error) {
           alert(data.error);
@@ -110,7 +116,7 @@ export default function LivePracticeMode() {
 
   const startTranscription = async () => {
       // Initialize WebSocket connection first
-      wsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/microphone`);
+      wsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/microphone/${user?.id}`);
       
       wsRef.current.onopen = () => {
           console.log('WebSocket Connected');
