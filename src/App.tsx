@@ -5,6 +5,7 @@ import {useNavigate} from "react-router"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Mic, BarChart, Trophy, ArrowRight } from "lucide-react"
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -39,13 +40,20 @@ export default function LandingPage() {
             PresentPro
           </h1>
           <div className="flex items-center space-x-4">
-            {/* <ThemeToggle /> */}
-            <Button
-              onClick={() => navigate("/dashboard")}
-              className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white`}
-            >
-              Get Started
-            </Button>
+            <SignedOut>
+              <SignInButton />
+            </SignedOut>
+            <SignedIn>
+              <div className="flex items-center space-x-4">
+                <Button
+                  onClick={() => navigate("/dashboard")}
+                  className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white`}
+                >
+                  Dashboard
+                </Button>
+                <UserButton />
+              </div>
+            </SignedIn>
           </div>
         </nav>
       </header>
