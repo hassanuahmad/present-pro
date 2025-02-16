@@ -180,7 +180,10 @@ export default function AnalyzePage() {
                     } cursor-pointer hover:bg-opacity-80 ${
                       theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-200"
                     }`}
-                    onClick={() => navigate(`/analyze/${speech.id}`)}
+                    onClick={() => {
+                      console.log('Navigating to speech:', speech.id);
+                      navigate(`/analyze/${speech.id}`);
+                    }}
                   >
                     <td className="px-4 py-2">{new Date(speech.created_at).toLocaleString()}</td>
                     <td className="px-4 py-2">{speech.global_word_count}</td>

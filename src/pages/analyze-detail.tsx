@@ -1,79 +1,65 @@
 import { useState, useEffect } from "react"
-import { useNavigate, useParams } from "react-router"
+import { useNavigate, useSearchParams } from "react-router"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Clock, BarChart2, Volume2 } from "lucide-react"
+import { ArrowLeft, Clock, BarChart2, Volume2, TrendingUp } from "lucide-react"
 import { Header } from "@/components/Header"
+import { useUser } from "@clerk/clerk-react"
 
-// Mock data for demonstration purposes
-const mockData = {
-  speechHistory: [
-    {
-      date: "2024-10-26",
-      topic: "State of the Union",
-      duration: "1:12:34",
-      fillerWords: 25,
-      wordsPerMinute: 150,
-      transcript:
-        "Esteemed colleagues, members of the press, and citizens of our great nation. Today, I stand before you to address the state of our union.  Um, it's a time of both challenges and opportunities.  We face economic headwinds, uh, but we also have the potential for unprecedented growth.  Like, we need to work together to overcome these obstacles. You know, it won't be easy, but I believe in the resilience of the American people. Actually, I'm confident that we can achieve great things if we collaborate effectively.  We must invest in infrastructure, education, and healthcare.  Um, these are critical areas that will shape our future.  Uh, we also need to address climate change and promote sustainable practices.  Like, this is a responsibility we owe to future generations. You know, we can't afford to delay action any longer. Actually, the time to act is now.  Thank you.",
-      fillerWordsList: ["um", "uh", "like", "you know", "actually"],
-    },
-    {
-      date: "2024-11-15",
-      topic: "Climate Change Initiatives",
-      duration: "45:00",
-      fillerWords: 12,
-      wordsPerMinute: 160,
-      transcript:
-        "Good morning, everyone. Today, we'll be discussing the latest climate change initiatives.  Um, as you know, this is a critical issue facing our planet.  Uh, we need to take immediate action to mitigate the effects of climate change.  Like, we can't afford to wait any longer. You know, the consequences are too severe. Actually, we need to transition to renewable energy sources.  We must invest in research and development of clean technologies.  Um, we also need to promote sustainable practices in all sectors of the economy.  Uh, this will require a collaborative effort from governments, businesses, and individuals.  Like, we all have a role to play. You know, we need to work together to create a sustainable future. Actually, the future of our planet depends on it. Thank you.",
-      fillerWordsList: ["um", "uh", "like", "you know", "actually"],
-    },
-  ],
-}
-
-const mockSpeechData = {
-  id: "1",
-  date: "2025-02-10",
-  topic: "Introduction to AI",
-  duration: "6:12",
-  fillerWords: 15,
-  wordsPerMinute: 130,
-  transcript:
-    "Welcome to this presentation on Artificial Intelligence. Today, we'll be discussing the fundamentals of AI and its impact on various industries. Um, let's start with a brief overview. AI, or Artificial Intelligence, refers to the simulation of human intelligence in machines. These machines are programmed to think and learn like humans, enabling them to perform tasks that typically require human intelligence. Some key areas of AI include machine learning, natural language processing, and computer vision. Uh, now let's dive into some specific applications. In healthcare, AI is revolutionizing diagnosis and treatment planning. For example, AI algorithms can analyze medical images to detect diseases earlier and more accurately than human doctors in some cases. In finance, AI is being used for fraud detection, algorithmic trading, and personalized banking experiences. Um, another exciting area is autonomous vehicles. Companies like Tesla and Waymo are using AI to develop self-driving cars that can navigate complex road conditions. As we look to the future, AI will continue to transform industries and create new opportunities. However, it's important to consider the ethical implications and potential challenges that come with this technology. In conclusion, Artificial Intelligence is a rapidly evolving field with enormous potential to change the way we live and work. Thank you for your attention, and I'm happy to answer any questions you may have.",
-  fillerWordsList: ["um", "uh", "like", "you know", "actually"],
+interface SpeechAnalysis {
+  id: number;
+  user_id: string;
+  transcript: string;
+  wpm_30: number;
+  filler_count_30: number;
+  filler_pct_30: number;
+  readability_60: number;
+  freq_60: string;
+  total_pauses: number;
+  global_word_count: number;
+  global_filler_count: number;
+  global_filler_pct: number;
+  global_readability: number;
+  created_at: string;
 }
 
 export default function IndividualSpeechAnalysis() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const id = searchParams.get('id')
+  const { user } = useUser()
+  const [analysis, setAnalysis] = useState<SpeechAnalysis | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   let theme = "dark"
-  const [speechData, setSpeechData] = useState(mockSpeechData)
-  const { id } = useParams()
 
   useEffect(() => {
-    const speechIndex = id ? Number.parseInt(id, 10) - 1 : 0
-    const speechData: any = {
-      ...mockSpeechData,
-      ...mockData.speechHistory[speechIndex],
-      id,
-      fillerWordsList: mockSpeechData.fillerWordsList,
-    }
-    setSpeechData(speechData)
-  }, [id])
+    const fetchAnalysis = async () => {
+      try {
+        setLoading(true)
+        console.log('Fetching analysis for ID:', id)
+        const response = await fetch(`https://${import.meta.env.VITE_ENDPOINT_URL}/history/${user?.id}/${id}`)
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch analysis')
+        }
 
-  const highlightFillerWords = (text: string, fillerWords: string[]) => {
-    const words = text.split(/\s+/)
-    return words.map((word, index) => {
-      const isFillerWord = fillerWords.some((filler) => word.toLowerCase().includes(filler.toLowerCase()))
-      return (
-        <span
-          key={index}
-          className={isFillerWord ? `font-bold ${theme === "dark" ? "text-red-400" : "text-red-600"}` : ""}
-        >
-          {word}{" "}
-        </span>
-      )
-    })
-  }
+        const data = await response.json()
+        console.log('Analysis data:', data)
+        setAnalysis(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (user?.id && id) {
+      fetchAnalysis()
+    }
+  }, [user?.id, id])
+
+
 
   return (
     <div
@@ -106,18 +92,36 @@ export default function IndividualSpeechAnalysis() {
           <CardContent>
             <div className="mb-6">
               <h2 className={`text-xl font-semibold mb-2 ${theme === "dark" ? "text-gray-200" : "text-gray-800"}`}>
-                {speechData.topic}
+                Speech Analysis
               </h2>
-              <p className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>{speechData.date}</p>
+              <p className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+                {analysis ? new Date(analysis.created_at).toLocaleString() : ''}
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <StatCard icon={Clock} title="Duration" value={speechData.duration} theme={theme} />
-              <StatCard icon={BarChart2} title="Filler Words" value={speechData.fillerWords.toString()} theme={theme} />
+              <StatCard 
+                icon={Clock} 
+                title="Total Words" 
+                value={analysis?.global_word_count} 
+                theme={theme} 
+              />
+              <StatCard 
+                icon={BarChart2} 
+                title="WPM (30s)" 
+                value={analysis?.wpm_30} 
+                theme={theme} 
+              />
               <StatCard
                 icon={Volume2}
-                title="Words per Minute"
-                value={speechData.wordsPerMinute.toString()}
+                title="Filler Words"
+                value={`${analysis?.global_filler_count} (${analysis?.global_filler_pct.toFixed(1)}%)`}
+                theme={theme}
+              />
+              <StatCard
+                icon={TrendingUp}
+                title="Readability"
+                value={analysis?.global_readability.toFixed(1)}
                 theme={theme}
               />
             </div>
@@ -128,27 +132,39 @@ export default function IndividualSpeechAnalysis() {
               </h3>
               <div className={`p-4 rounded-lg h-64 overflow-y-auto ${theme === "dark" ? "bg-gray-900" : "bg-gray-100"}`}>
                 <p className={`text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-                  {highlightFillerWords(speechData.transcript, speechData.fillerWordsList)}
+                  {analysis?.transcript}
                 </p>
               </div>
             </div>
 
-            <div>
-              <h3 className={`text-lg font-semibold mb-2 ${theme === "dark" ? "text-gray-200" : "text-gray-800"}`}>
-                Filler Words Used
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {speechData.fillerWordsList.map((word, index) => (
-                  <span
-                    key={index}
-                    className={`px-2 py-1 rounded-full text-sm ${
-                      theme === "dark" ? "bg-red-900 text-red-100" : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {word}
-                  </span>
-                ))}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <InfoCard
+                title="30-Second Analysis"
+                items={[
+                  { label: "WPM", value: analysis?.wpm_30 },
+                  { label: "Filler Words", value: analysis?.filler_count_30 },
+                  { label: "Filler %", value: analysis?.filler_pct_30.toFixed(1) + '%' },
+                ]}
+                theme={theme}
+              />
+              <InfoCard
+                title="60-Second Analysis"
+                items={[
+                  { label: "Readability", value: analysis?.readability_60.toFixed(1) },
+                  { label: "Total Pauses", value: analysis?.total_pauses },
+                ]}
+                theme={theme}
+              />
+              <InfoCard
+                title="Global Analysis"
+                items={[
+                  { label: "Total Words", value: analysis?.global_word_count },
+                  { label: "Filler Words", value: analysis?.global_filler_count },
+                  { label: "Filler %", value: analysis?.global_filler_pct.toFixed(1) + '%' },
+                  { label: "Readability", value: analysis?.global_readability.toFixed(1) },
+                ]}
+                theme={theme}
+              />
             </div>
           </CardContent>
         </Card>
@@ -157,7 +173,42 @@ export default function IndividualSpeechAnalysis() {
   )
 }
 
-function StatCard({ icon: Icon, title, value, theme }: any) {
+type StatsCardProps = {
+  icon: any
+  title: string
+  value: any
+  theme: string
+}
+
+type InfoCardProps = {
+  title: string
+  items: Array<{ label: string; value: any }>
+  theme: string
+}
+
+function InfoCard({ title, items, theme }: InfoCardProps) {
+  return (
+    <Card className={`${theme === "dark" ? "bg-gray-700" : "bg-gray-50"}`}>
+      <CardHeader>
+        <CardTitle className={`text-lg ${theme === "dark" ? "text-gray-200" : "text-gray-800"}`}>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={index} className="flex justify-between">
+              <span className={`${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>{item.label}</span>
+              <span className={`font-semibold ${theme === "dark" ? "text-gray-100" : "text-gray-800"}`}>
+                {item.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function StatCard({ icon: Icon, title, value, theme }: StatsCardProps) {
   return (
     <Card className={`${theme === "dark" ? "bg-gray-700" : "bg-gray-50"}`}>
       <CardContent className="flex items-center p-4">
