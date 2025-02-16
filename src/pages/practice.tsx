@@ -10,6 +10,7 @@ const fillerWords = ["um", "uh", "like", "you know", "actually", "basically", "l
 const SAMPLE_RATE = 16000;
 
 export default function LivePracticeMode() {
+  const wsRef = useRef<WebSocket | null>(null);
   let theme = "dark"
   const [isRecording, setIsRecording] = useState(false)
   const [transcript, setTranscript] = useState("")
@@ -33,6 +34,11 @@ export default function LivePracticeMode() {
   }, [transcriptRef.current]) //Corrected dependency
 
   const resetPractice = () => {
+      // Close WebSocket connection if it exists
+      if (wsRef.current) {
+          wsRef.current.close();
+          wsRef.current = null;
+      }
     setTranscript("")
     setFillerCount(0)
     setIsRecording(false)
@@ -44,9 +50,11 @@ export default function LivePracticeMode() {
 
   const realtimeTranscriber = useRef<RealtimeTranscriber | null>(null);
   const recorder = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   const getToken = async () => {
-      const response = await fetch("http://172.105.22.222:8000/token");
+      const response = await fetch(`http://${import.meta.env.VITE_ENDPOINT_URL}/token`);
       const data = await response.json();
       if (data.error) {
           alert(data.error);
@@ -55,6 +63,52 @@ export default function LivePracticeMode() {
   };
 
   const startTranscription = async () => {
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorderRef.current = new MediaRecorder(stream, {
+              mimeType: 'audio/webm;codecs=opus',
+              audioBitsPerSecond: 16000
+          });
+
+          mediaRecorderRef.current.ondataavailable = async (event) => {
+              if (event.data.size > 0) {
+                  chunksRef.current.push(event.data);
+                  
+                  // Send to your backend
+                  if (wsRef.current?.readyState === WebSocket.OPEN) {
+                      wsRef.current.send(event.data);
+                  }
+              }
+          };
+
+          mediaRecorderRef.current.start(100); // Send chunks every 100ms
+      } catch (error) {
+          console.error("Error setting up MediaRecorder:", error);
+      }
+      // Initialize WebSocket connection
+      wsRef.current = new WebSocket(`ws://${import.meta.env.VITE_ENDPOINT_URL}/microphone`);
+      
+      wsRef.current.onopen = () => {
+          console.log('WebSocket Connected');
+      };
+      
+      wsRef.current.onerror = (error) => {
+          console.error('WebSocket Error:', error);
+      };
+      
+      wsRef.current.onclose = () => {
+          console.log('WebSocket Connection Closed');
+      };
+
+      wsRef.current.onmessage = (event) => {
+          console.log('Received from server:', event.data);
+          try {
+              const data = JSON.parse(event.data);
+              console.log('Parsed server data:', data);
+          } catch (error) {
+              console.log('Raw server data:', event.data);
+          }
+      };
       realtimeTranscriber.current = new RealtimeTranscriber({
           token: await getToken(),
           sampleRate: SAMPLE_RATE,
@@ -62,6 +116,7 @@ export default function LivePracticeMode() {
 
       const texts: Record<number, string> = {};
       realtimeTranscriber.current.on("transcript", (transcript) => {
+
           let msg = '';
           texts[transcript.audio_start] = transcript.text;
           const keys = Object.keys(texts);
@@ -93,25 +148,28 @@ export default function LivePracticeMode() {
 
       await realtimeTranscriber.current.connect();
 
+      // Set up stream for AssemblyAI transcription
       navigator.mediaDevices
           .getUserMedia({ audio: true })
           .then((stream) => {
-          recorder.current = new RecordRTC(stream, {
-              type: 'audio',
-              mimeType: 'audio/webm;codecs=pcm',
-              recorderType: RecordRTC.StereoAudioRecorder,
-              timeSlice: 250,
-              desiredSampRate: 16000,
-              numberOfAudioChannels: 1,
-              bufferSize: 4096,
-              audioBitsPerSecond: 128000,
-              ondataavailable: async (blob: any) => {
-                  if (!realtimeTranscriber.current) return;
-                  const buffer = await blob.arrayBuffer();
-                  realtimeTranscriber.current.sendAudio(buffer);
-              },
-          });
-          recorder.current.startRecording();
+              // Recorder for AssemblyAI
+              recorder.current = new RecordRTC(stream, {
+                  type: 'audio',
+                  mimeType: 'audio/webm;codecs=pcm',
+                  recorderType: RecordRTC.StereoAudioRecorder,
+                  timeSlice: 250,
+                  desiredSampRate: 16000,
+                  numberOfAudioChannels: 1,
+                  bufferSize: 4096,
+                  audioBitsPerSecond: 128000,
+                  ondataavailable: async (blob: any) => {
+                      if (!realtimeTranscriber.current) return;
+                      const buffer = await blob.arrayBuffer();
+                      realtimeTranscriber.current.sendAudio(buffer);
+                  },
+              });
+              
+              recorder.current.startRecording();
           })
           .catch((err) => console.error(err));
 
@@ -119,6 +177,18 @@ export default function LivePracticeMode() {
   };
 
   const endTranscription = async () => {
+      // Stop MediaRecorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+          const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          chunksRef.current = [];
+          mediaRecorderRef.current = null;
+      }
+      // Close WebSocket connection
+      if (wsRef.current) {
+          wsRef.current.close();
+          wsRef.current = null;
+      }
       setIsRecording(false);
       await realtimeTranscriber.current?.close();
       realtimeTranscriber.current = null;
