@@ -1,29 +1,69 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Trophy, Mic, BarChart2, TrendingUp, ArrowRight } from "lucide-react"
 import { Header } from "@/components/Header"
+import { useUser } from "@clerk/clerk-react"
 
-// Mock data for demonstration purposes
-const mockData = {
-  challengePoints: 1250,
-  speechesGiven: 15,
-  averageFillerWords: 12,
-  averageSpeechDuration: "5:30",
-  speechHistory: [
-    { date: "2025-02-10", duration: "6:12", fillerWords: 15, topic: "Introduction to AI" },
-    { date: "2025-02-08", duration: "4:55", fillerWords: 10, topic: "Climate Change Solutions" },
-    { date: "2025-02-05", duration: "5:30", fillerWords: 8, topic: "Future of Work" },
-    { date: "2025-02-01", duration: "5:45", fillerWords: 14, topic: "Sustainable Energy" },
-  ],
-}
+interface SpeechAnalysis {
+    id: number;
+    user_id: string;
+    transcript: string;
+    wpm_30: number;
+    filler_count_30: number;
+    filler_pct_30: number;
+    readability_60: number;
+    freq_60: string;
+    total_pauses: number;
+    global_word_count: number;
+    global_filler_count: number;
+    global_filler_pct: number;
+    global_readability: number;
+    created_at: string;
+  }
+  
+
+// Fetch speech history from API
+const  useSpeechHistory = () => {
+  const { user } = useUser();
+  const [history, setHistory] = useState<SpeechAnalysis[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`https://${import.meta.env.VITE_ENDPOINT_URL}/history/${user?.id}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch history');
+        }
+
+        const data = await response.json();
+        setHistory(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.id) {
+      fetchHistory();
+    }
+  }, [user?.id]);
+
+  return { history, loading, error };
+};
 
 export default function AnalyzePage() {
   const navigate = useNavigate()
+  const { history, loading, error } = useSpeechHistory()
   let theme = "dark"
   const [selectedTimeframe, setSelectedTimeframe] = useState("all")
 
@@ -61,13 +101,31 @@ export default function AnalyzePage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={Trophy} title="Challenge Points" value={mockData.challengePoints} theme={theme} />
-            <StatCard icon={Mic} title="Speeches Given" value={mockData.speechesGiven} theme={theme} />
-            <StatCard icon={BarChart2} title="Avg. Filler Words" value={mockData.averageFillerWords} theme={theme} />
+            <StatCard 
+              icon={Mic} 
+              title="Total Words" 
+              value={history.length > 0 ? history.reduce((acc, curr) => acc + curr.global_word_count, 0) : 0}
+              theme={theme} 
+            />
+            <StatCard 
+              icon={BarChart2} 
+              title="Avg. Filler Words %" 
+              value={history.length > 0 ? 
+                (history.reduce((acc, curr) => acc + curr.global_filler_pct, 0) / history.length).toFixed(1) + '%' : '0%'} 
+              theme={theme} 
+            />
             <StatCard
               icon={TrendingUp}
-              title="Avg. Speech Duration"
-              value={mockData.averageSpeechDuration}
+              title="Avg. WPM (30s)"
+              value={history.length > 0 ? 
+                Math.round(history.reduce((acc, curr) => acc + curr.wpm_30, 0) / history.length) : 0}
+              theme={theme}
+            />
+            <StatCard
+              icon={Trophy}
+              title="Avg. Readability"
+              value={history.length > 0 ? 
+                (history.reduce((acc, curr) => acc + curr.global_readability, 0) / history.length).toFixed(1) : '0.0'}
               theme={theme}
             />
           </div>
@@ -97,14 +155,21 @@ export default function AnalyzePage() {
               <thead>
                 <tr className={`${theme === "dark" ? "bg-gray-800" : "bg-gray-200"}`}>
                   <th className="px-4 py-2 text-left">Date</th>
-                  <th className="px-4 py-2 text-left">Topic</th>
-                  <th className="px-4 py-2 text-left">Duration</th>
-                  <th className="px-4 py-2 text-left">Filler Words</th>
+                  <th className="px-4 py-2 text-left">Words</th>
+                  <th className="px-4 py-2 text-left">WPM (30s)</th>
+                  <th className="px-4 py-2 text-left">Filler %</th>
+                  <th className="px-4 py-2 text-left">Readability</th>
                   <th className="px-4 py-2"></th>
                 </tr>
               </thead>
               <tbody>
-                {mockData.speechHistory.map((speech, index) => (
+                {loading ? (
+            <div className="text-center py-4">Loading...</div>
+          ) : error ? (
+            <div className="text-center py-4 text-red-500">{error}</div>
+          ) : history.length === 0 ? (
+            <div className="text-center py-4">No speech history available</div>
+          ) : history.map((speech, index) => (
                   <motion.tr
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
@@ -115,12 +180,13 @@ export default function AnalyzePage() {
                     } cursor-pointer hover:bg-opacity-80 ${
                       theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-200"
                     }`}
-                    onClick={() => navigate(`/analyze/${index + 1}`)}
+                    onClick={() => navigate(`/analyze/${speech.id}`)}
                   >
-                    <td className="px-4 py-2">{speech.date}</td>
-                    <td className="px-4 py-2">{speech.topic}</td>
-                    <td className="px-4 py-2">{speech.duration}</td>
-                    <td className="px-4 py-2">{speech.fillerWords}</td>
+                    <td className="px-4 py-2">{new Date(speech.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-2">{speech.global_word_count}</td>
+                    <td className="px-4 py-2">{speech.wpm_30}</td>
+                    <td className="px-4 py-2">{speech.global_filler_pct.toFixed(1)}%</td>
+                    <td className="px-4 py-2">{speech.global_readability.toFixed(1)}</td>
                     <td className="px-4 py-2 text-right">
                       <ArrowRight className={`inline-block ${theme === "dark" ? "text-teal-400" : "text-teal-600"}`} />
                     </td>
