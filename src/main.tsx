@@ -5,6 +5,8 @@ import './index.css'
 import App from './App.tsx'
 import Dashboard from './pages/dashboard';
 import Practice from './pages/practice';
+import Analyze from './pages/analyze';
+import AnalyzeDetail from './pages/analyze-detail';
 import { ClerkProvider } from '@clerk/clerk-react'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
@@ -34,6 +36,22 @@ createRoot(document.getElementById('root')!).render(
             element={
               <ProtectedRoute>
                 <Practice />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="analyze"
+            element={
+              <ProtectedRoute>
+                <Analyze />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="analyze/:id"
+            element={
+              <ProtectedRoute>
+                <AnalyzeDetail />
               </ProtectedRoute>
             }
           />

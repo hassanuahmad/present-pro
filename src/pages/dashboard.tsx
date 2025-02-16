@@ -12,10 +12,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const features = [
-    { name: "Prepare", icon: FileText, description: "Create and organize your content", route: "/app/prepare" },
+    { name: "Prepare", icon: FileText, description: "Create and organize your content", route: "/prepare" },
     { name: "Practice", icon: Mic, description: "Rehearse with AI feedback", route: "/practice" },
-    { name: "Analyze", icon: BarChart, description: "Track your improvement", route: "/app/analyze" },
-    { name: "Challenges", icon: Trophy, description: "Complete daily tasks", route: "/app/challenges" },
+    { name: "Analyze", icon: BarChart, description: "Track your improvement", route: "/analyze" },
+    { name: "Challenges", icon: Trophy, description: "Complete daily tasks", route: "/challenges" },
   ]
 
   return (
