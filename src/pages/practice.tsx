@@ -13,6 +13,9 @@ const SAMPLE_RATE = 16000;
 
 export default function LivePracticeMode() {
   const wsRef = useRef<WebSocket | null>(null);
+  const vibrateWsRef = useRef<WebSocket | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const [wpm, setWpm] = useState(0);
   const navigate = useNavigate()
   let theme = "dark"
   const [isRecording, setIsRecording] = useState(false)
@@ -36,12 +39,52 @@ export default function LivePracticeMode() {
     }
   }, [transcriptRef.current]) //Corrected dependency
 
+  const connectVibrateWs = () => {
+    if (!vibrateWsRef.current || vibrateWsRef.current.readyState !== WebSocket.OPEN) {
+      vibrateWsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/vibrate`);
+      vibrateWsRef.current.onopen = () => console.log('Vibrate WebSocket connected');
+      vibrateWsRef.current.onerror = (error) => console.error('Vibrate WebSocket error:', error);
+      vibrateWsRef.current.onclose = () => console.log('Vibrate WebSocket closed');
+    }
+  };
+
+  const calculateAndUpdateWPM = (text: string) => {
+    if (!startTimeRef.current) return;
+
+    const words = text.trim().split(/\s+/).length;
+    const elapsedTimeInSeconds = Math.max((Date.now() - startTimeRef.current) / 1000, 1);
+    const currentWPM = Math.round((words * 60) / elapsedTimeInSeconds);
+
+    setWpm(currentWPM);
+    
+    // Update visual feedback
+    let speedMessage = '';
+    if (currentWPM < 120) {
+      speedMessage = 'Too Slow';
+    } else if (currentWPM > 160) {
+      speedMessage = 'Too Fast';
+      // Send vibration when speaking too fast
+      vibrateWsRef.current?.send(JSON.stringify({ type: 'vibrate' }));
+    } else {
+      speedMessage = 'Average';
+    }
+    
+    setCurrentWord(speedMessage);
+    console.log(`WPM: ${currentWPM}, Status: ${speedMessage}`);
+  };
+
   const resetPractice = () => {
-      // Close WebSocket connection if it exists
+      // Close WebSocket connections if they exist
       if (wsRef.current) {
           wsRef.current.close();
           wsRef.current = null;
       }
+      if (vibrateWsRef.current) {
+          vibrateWsRef.current.close();
+          vibrateWsRef.current = null;
+      }
+      startTimeRef.current = null;
+      setWpm(0);
     setTranscript("")
     setFillerCount(0)
     setIsRecording(false)
@@ -147,11 +190,14 @@ export default function LivePracticeMode() {
               }
           }
           
-          // Count filler words in the new transcript
+          // Count filler words and calculate WPM
           const words = msg.toLowerCase().split(/\s+/);
           const fillerWordCount = words.filter(word => fillerWords.includes(word)).length;
           setFillerCount(fillerWordCount);
           setTranscript(msg);
+          
+          // Calculate and update WPM
+          calculateAndUpdateWPM(msg);
       });
 
       realtimeTranscriber.current.on("error", (event) => {
@@ -193,6 +239,8 @@ export default function LivePracticeMode() {
           .catch((err) => console.error(err));
 
       setIsRecording(true);
+      startTimeRef.current = Date.now();
+      connectVibrateWs();
   };
 
   const endTranscription = async () => {
@@ -259,14 +307,26 @@ export default function LivePracticeMode() {
               </Button>
             </div>
           </div>
-          <div
-            className={`mb-4 h-16 flex items-center justify-center rounded-lg ${
-              theme === "dark" ? "bg-gray-700" : "bg-blue-50"
-            }`}
-          >
-            <span className={`text-4xl font-bold ${theme === "dark" ? "text-blue-300" : "text-blue-500"}`}>
-              {currentWord}
-            </span>
+          <div className="flex justify-between items-center mb-4">
+            <div
+              className={`flex-1 h-16 flex items-center justify-center rounded-lg ${
+                theme === "dark" ? "bg-gray-700" : "bg-blue-50"
+              }`}
+            >
+              <span 
+                className={`text-4xl font-bold ${
+                  currentWord === "Too Fast" ? "text-red-500" :
+                  currentWord === "Too Slow" ? "text-yellow-500" :
+                  currentWord === "Average" ? "text-green-500" :
+                  theme === "dark" ? "text-blue-300" : "text-blue-500"
+                }`}
+              >
+                {currentWord || "Start speaking..."}
+              </span>
+            </div>
+            <div className="ml-4 text-lg font-semibold">
+              WPM: {wpm}
+            </div>
           </div>
           <div
             ref={transcriptRef}
