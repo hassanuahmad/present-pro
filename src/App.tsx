@@ -7,10 +7,12 @@ import { Header } from "@/components/Header"
 import { useNavigate } from "react-router"
 import { Button } from "./components/ui/button"
 import { ArrowRight } from "lucide-react"
+import { useAuth, SignInButton } from "@clerk/clerk-react"
 
 export default function LandingPage() {
   let theme = "dark"
   const navigate = useNavigate()
+  const { isSignedIn } = useAuth()
   const [scrollY, setScrollY] = useState(0)
 
   useEffect(() => {
@@ -58,13 +60,24 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <Button
-              onClick={() => navigate("/dashboard")}
-              size="lg"
-              className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white text-lg px-8 py-4`}
-            >
-              Start Your Journey <ArrowRight className="ml-2" />
-            </Button>
+            {isSignedIn ? (
+              <Button
+                onClick={() => navigate("/dashboard")}
+                size="lg"
+                className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white text-lg px-8 py-4`}
+              >
+                Start Your Journey <ArrowRight className="ml-2" />
+              </Button>
+            ) : (
+              <SignInButton mode="modal">
+                <Button
+                  size="lg"
+                  className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white text-lg px-8 py-4`}
+                >
+                  Start Your Journey <ArrowRight className="ml-2" />
+                </Button>
+              </SignInButton>
+            )}
           </motion.div>
         </section>
 
@@ -137,13 +150,24 @@ export default function LandingPage() {
           >
             Ready to Become a Presentation Pro?
           </h2>
-          <Button
-            onClick={() => navigate("/dashboard")}
-            size="lg"
-            className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white text-lg px-8 py-4`}
-          >
-            Get Started Now <ArrowRight className="ml-2" />
-          </Button>
+          {isSignedIn ? (
+            <Button
+              onClick={() => navigate("/dashboard")}
+              size="lg"
+              className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white text-lg px-8 py-4`}
+            >
+              Get Started Now <ArrowRight className="ml-2" />
+            </Button>
+          ) : (
+            <SignInButton mode="modal">
+              <Button
+                size="lg"
+                className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white text-lg px-8 py-4`}
+              >
+                Get Started Now <ArrowRight className="ml-2" />
+              </Button>
+            </SignInButton>
+          )}
         </section>
       </main>
 
