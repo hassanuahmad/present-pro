@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
-import { useNavigate, useSearchParams } from "react-router"
+import { useNavigate, useParams } from "react-router"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Clock, BarChart2, Volume2, TrendingUp } from "lucide-react"
+import { ArrowLeft, Clock, BarChart2, Volume2 } from "lucide-react"
 import { Header } from "@/components/Header"
 import { useUser } from "@clerk/clerk-react"
 
@@ -23,10 +23,27 @@ interface SpeechAnalysis {
   created_at: string;
 }
 
+const fillerWords = ["um", "uh", "like", "you know", "actually", "basically", "literally"]
+
+const isFillerWord = (word: string) => {
+  return fillerWords.some(filler => {
+    const fillerParts = filler.toLowerCase().split(' ')
+    return fillerParts.length > 1 
+      ? filler.toLowerCase() === word.toLowerCase()
+      : word.toLowerCase() === filler.toLowerCase()
+  })
+}
+
+const calculateFillerStats = (transcript: string) => {
+  const words = transcript.split(/\s+/)
+  const fillerCount = words.filter(word => isFillerWord(word)).length
+  const percentage = ((fillerCount / words.length) * 100).toFixed(1)
+  return { fillerCount, percentage }
+}
+
 export default function IndividualSpeechAnalysis() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const id = searchParams.get('id')
+  let { id } = useParams();
   const { user } = useUser()
   const [analysis, setAnalysis] = useState<SpeechAnalysis | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,6 +51,8 @@ export default function IndividualSpeechAnalysis() {
   let theme = "dark"
 
   useEffect(() => {
+    console.log("loading: ", loading);
+    console.log("error: ", error)
     const fetchAnalysis = async () => {
       try {
         setLoading(true)
@@ -45,6 +64,7 @@ export default function IndividualSpeechAnalysis() {
         }
 
         const data = await response.json()
+        console.log(data)
         console.log('Analysis data:', data)
         setAnalysis(data)
       } catch (err) {
@@ -115,13 +135,11 @@ export default function IndividualSpeechAnalysis() {
               <StatCard
                 icon={Volume2}
                 title="Filler Words"
-                value={`${analysis?.global_filler_count} (${analysis?.global_filler_pct.toFixed(1)}%)`}
-                theme={theme}
-              />
-              <StatCard
-                icon={TrendingUp}
-                title="Readability"
-                value={analysis?.global_readability.toFixed(1)}
+                value={(() => {
+                  if (!analysis?.transcript) return '0 (0%)'
+                  const { fillerCount, percentage } = calculateFillerStats(analysis.transcript)
+                  return `${fillerCount} (${percentage}%)`
+                })()} 
                 theme={theme}
               />
             </div>
@@ -132,7 +150,16 @@ export default function IndividualSpeechAnalysis() {
               </h3>
               <div className={`p-4 rounded-lg h-64 overflow-y-auto ${theme === "dark" ? "bg-gray-900" : "bg-gray-100"}`}>
                 <p className={`text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-                  {analysis?.transcript}
+                  {analysis?.transcript ? (
+                    analysis.transcript.split(/\s+/).map((word, index) => (
+                      <span key={index}>
+                        <span className={isFillerWord(word) ? 'text-red-500 font-semibold' : ''}>
+                          {word}
+                        </span>
+                        {' '}
+                      </span>
+                    ))
+                  ) : null}
                 </p>
               </div>
             </div>
@@ -142,8 +169,14 @@ export default function IndividualSpeechAnalysis() {
                 title="30-Second Analysis"
                 items={[
                   { label: "WPM", value: analysis?.wpm_30 },
-                  { label: "Filler Words", value: analysis?.filler_count_30 },
-                  { label: "Filler %", value: analysis?.filler_pct_30.toFixed(1) + '%' },
+                  { label: "Filler Words", value: (() => {
+                    if (!analysis?.transcript) return '0'
+                    return calculateFillerStats(analysis.transcript).fillerCount
+                  })() },
+                  { label: "Filler %", value: (() => {
+                    if (!analysis?.transcript) return '0%'
+                    return calculateFillerStats(analysis.transcript).percentage + '%'
+                  })() },
                 ]}
                 theme={theme}
               />
@@ -158,9 +191,15 @@ export default function IndividualSpeechAnalysis() {
               <InfoCard
                 title="Global Analysis"
                 items={[
-                  { label: "Total Words", value: analysis?.global_word_count },
-                  { label: "Filler Words", value: analysis?.global_filler_count },
-                  { label: "Filler %", value: analysis?.global_filler_pct.toFixed(1) + '%' },
+                  { label: "Total Words", value: analysis?.transcript.split(/\s+/).length },
+                  { label: "Filler Words", value: (() => {
+                    if (!analysis?.transcript) return '0'
+                    return calculateFillerStats(analysis.transcript).fillerCount
+                  })() },
+                  { label: "Filler %", value: (() => {
+                    if (!analysis?.transcript) return '0%'
+                    return calculateFillerStats(analysis.transcript).percentage + '%'
+                  })() },
                   { label: "Readability", value: analysis?.global_readability.toFixed(1) },
                 ]}
                 theme={theme}

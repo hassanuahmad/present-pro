@@ -5,7 +5,7 @@ import { useNavigate } from "react-router"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Trophy, Mic, BarChart2, TrendingUp, ArrowRight } from "lucide-react"
+import { ArrowLeft, Trophy, Mic, TrendingUp, ArrowRight } from "lucide-react"
 import { Header } from "@/components/Header"
 import { useUser } from "@clerk/clerk-react"
 
@@ -100,18 +100,11 @@ export default function AnalyzePage() {
           {/* <ThemeToggle /> */}
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             <StatCard 
               icon={Mic} 
               title="Total Words" 
               value={history.length > 0 ? history.reduce((acc, curr) => acc + curr.global_word_count, 0) : 0}
-              theme={theme} 
-            />
-            <StatCard 
-              icon={BarChart2} 
-              title="Avg. Filler Words %" 
-              value={history.length > 0 ? 
-                (history.reduce((acc, curr) => acc + curr.global_filler_pct, 0) / history.length).toFixed(1) + '%' : '0%'} 
               theme={theme} 
             />
             <StatCard
@@ -157,7 +150,6 @@ export default function AnalyzePage() {
                   <th className="px-4 py-2 text-left">Date</th>
                   <th className="px-4 py-2 text-left">Words</th>
                   <th className="px-4 py-2 text-left">WPM (30s)</th>
-                  <th className="px-4 py-2 text-left">Filler %</th>
                   <th className="px-4 py-2 text-left">Readability</th>
                   <th className="px-4 py-2"></th>
                 </tr>
@@ -188,7 +180,6 @@ export default function AnalyzePage() {
                     <td className="px-4 py-2">{new Date(speech.created_at).toLocaleString()}</td>
                     <td className="px-4 py-2">{speech.global_word_count}</td>
                     <td className="px-4 py-2">{speech.wpm_30}</td>
-                    <td className="px-4 py-2">{speech.global_filler_pct.toFixed(1)}%</td>
                     <td className="px-4 py-2">{speech.global_readability.toFixed(1)}</td>
                     <td className="px-4 py-2 text-right">
                       <ArrowRight className={`inline-block ${theme === "dark" ? "text-teal-400" : "text-teal-600"}`} />
