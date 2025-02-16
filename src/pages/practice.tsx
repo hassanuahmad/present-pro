@@ -43,7 +43,7 @@ export default function LivePracticeMode() {
 
   const connectVibrateWs = () => {
     if (!vibrateWsRef.current || vibrateWsRef.current.readyState !== WebSocket.OPEN) {
-      vibrateWsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/vibrate/${user?.id}`);
+      vibrateWsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/vibrate`);
       vibrateWsRef.current.onopen = () => console.log('Vibrate WebSocket connected');
       vibrateWsRef.current.onerror = (error) => console.error('Vibrate WebSocket error:', error);
       vibrateWsRef.current.onclose = () => console.log('Vibrate WebSocket closed');
