@@ -132,7 +132,7 @@ export default function AnalyzePage() {
         </CardContent>
       </Card>
       </div>
-    </div>
+1    </div>
   )
 }
 
@@ -148,15 +148,10 @@ function StatCard({ icon: Icon, title, value, theme }: StatsCardProps) {
     <Card className={`${theme === "dark" ? "bg-gray-700" : "bg-gray-50"}`}>
       <CardContent className="flex items-center p-4">
         <Icon className={`h-8 w-8 mr-4 ${theme === "dark" ? "text-teal-400" : "text-teal-600"}`} />
-    <Card className={`${theme === "dark" ? "bg-gray-700" : "bg-gray-50"}`}>
-      <CardContent className="flex items-center p-4">
-        <Icon className={`h-8 w-8 mr-4 ${theme === "dark" ? "text-teal-400" : "text-teal-600"}`} />
         <div>
           <p className={`text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>{title}</p>
           <p className={`text-2xl font-bold ${theme === "dark" ? "text-gray-100" : "text-gray-800"}`}>{value}</p>
         </div>
-      </CardContent>
-    </Card>
       </CardContent>
     </Card>
   )
