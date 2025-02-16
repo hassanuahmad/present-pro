@@ -63,29 +63,7 @@ export default function LivePracticeMode() {
   };
 
   const startTranscription = async () => {
-      try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorderRef.current = new MediaRecorder(stream, {
-              mimeType: 'audio/webm;codecs=opus',
-              audioBitsPerSecond: 16000
-          });
-
-          mediaRecorderRef.current.ondataavailable = async (event) => {
-              if (event.data.size > 0) {
-                  chunksRef.current.push(event.data);
-                  
-                  // Send to your backend
-                  if (wsRef.current?.readyState === WebSocket.OPEN) {
-                      wsRef.current.send(event.data);
-                  }
-              }
-          };
-
-          mediaRecorderRef.current.start(100); // Send chunks every 100ms
-      } catch (error) {
-          console.error("Error setting up MediaRecorder:", error);
-      }
-      // Initialize WebSocket connection
+      // Initialize WebSocket connection first
       wsRef.current = new WebSocket(`ws://${import.meta.env.VITE_ENDPOINT_URL}/microphone`);
       
       wsRef.current.onopen = () => {
@@ -99,6 +77,44 @@ export default function LivePracticeMode() {
       wsRef.current.onclose = () => {
           console.log('WebSocket Connection Closed');
       };
+
+      // Wait for WebSocket to connect
+      await new Promise<void>((resolve) => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+              resolve();
+          } else {
+              wsRef.current!.addEventListener('open', () => resolve());
+          }
+      });
+
+      try {
+          console.log('Setting up MediaRecorder...');
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorderRef.current = new MediaRecorder(stream, {
+              mimeType: 'audio/webm;codecs=opus',
+              audioBitsPerSecond: 16000
+          });
+
+          mediaRecorderRef.current.ondataavailable = async (event) => {
+              if (event.data.size > 0) {
+                  chunksRef.current.push(event.data);
+                  console.log('Got audio chunk, size:', event.data.size);
+                  
+                  // Send to your backend
+                  if (wsRef.current?.readyState === WebSocket.OPEN) {
+                      wsRef.current.send(event.data);
+                      console.log('Sent audio chunk to server');
+                  } else {
+                      console.warn('WebSocket not open, state:', wsRef.current?.readyState);
+                  }
+              }
+          };
+
+          console.log('Starting MediaRecorder...');
+          mediaRecorderRef.current.start(1000); // Send chunks every 1 second
+      } catch (error) {
+          console.error("Error setting up MediaRecorder:", error);
+      }
 
       wsRef.current.onmessage = (event) => {
           console.log('Received from server:', event.data);
