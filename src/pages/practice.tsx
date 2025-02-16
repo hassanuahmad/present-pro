@@ -197,6 +197,7 @@ export default function LivePracticeMode() {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
           mediaRecorderRef.current.stop();
           const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          console.log(audioBlob)
           chunksRef.current = [];
           mediaRecorderRef.current = null;
       }
