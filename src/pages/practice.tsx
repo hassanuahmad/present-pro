@@ -15,7 +15,6 @@ const SAMPLE_RATE = 16000;
 export default function LivePracticeMode() {
   const { user } = useUser();
   const wsRef = useRef<WebSocket | null>(null);
-  const vibrateWsRef = useRef<WebSocket | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const [wpm, setWpm] = useState(0);
   const navigate = useNavigate()
@@ -41,15 +40,6 @@ export default function LivePracticeMode() {
     }
   }, [transcriptRef.current]) //Corrected dependency
 
-  const connectVibrateWs = () => {
-    if (!vibrateWsRef.current || vibrateWsRef.current.readyState !== WebSocket.OPEN) {
-      vibrateWsRef.current = new WebSocket(`wss://${import.meta.env.VITE_ENDPOINT_URL}/vibrate`);
-      vibrateWsRef.current.onopen = () => console.log('Vibrate WebSocket connected');
-      vibrateWsRef.current.onerror = (error) => console.error('Vibrate WebSocket error:', error);
-      vibrateWsRef.current.onclose = () => console.log('Vibrate WebSocket closed');
-    }
-  };
-
   const calculateAndUpdateWPM = (text: string) => {
     if (!startTimeRef.current) return;
 
@@ -65,14 +55,6 @@ export default function LivePracticeMode() {
       speedMessage = 'Too Slow';
     } else if (currentWPM > 160) {
       speedMessage = 'Too Fast';
-      // Send vibration when speaking too fast
-      if (vibrateWsRef.current?.readyState === WebSocket.OPEN) {
-        console.log('Sending vibrate command...');
-        vibrateWsRef.current.send(JSON.stringify({ command: 'vibrate' }));
-      } else {
-        console.log('Vibrate WebSocket not connected, reconnecting...');
-        connectVibrateWs();
-      }
     } else {
       speedMessage = 'Average';
     }
@@ -86,10 +68,6 @@ export default function LivePracticeMode() {
       if (wsRef.current) {
           wsRef.current.close();
           wsRef.current = null;
-      }
-      if (vibrateWsRef.current) {
-          vibrateWsRef.current.close();
-          vibrateWsRef.current = null;
       }
       startTimeRef.current = null;
       setWpm(0);
@@ -252,7 +230,6 @@ export default function LivePracticeMode() {
 
       setIsRecording(true);
       startTimeRef.current = Date.now();
-      connectVibrateWs();
   };
 
   const endTranscription = async () => {
