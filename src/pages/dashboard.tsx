@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { FileText, Mic, BarChart, Trophy } from "lucide-react"
+import { FileText, Mic, BarChart } from "lucide-react"
 import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router"
@@ -15,7 +15,6 @@ export default function Dashboard() {
     { name: "Prepare", icon: FileText, description: "Create and organize your content", route: "/prepare" },
     { name: "Practice", icon: Mic, description: "Rehearse with AI feedback", route: "/practice" },
     { name: "Analyze", icon: BarChart, description: "Track your improvement", route: "/analyze" },
-    { name: "Challenges", icon: Trophy, description: "Complete daily tasks", route: "/challenges" },
   ]
 
   return (
@@ -31,7 +30,7 @@ export default function Dashboard() {
           Welcome to Your Dashboard
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <motion.div
               key={feature.name}
