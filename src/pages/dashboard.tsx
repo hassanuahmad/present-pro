@@ -1,21 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import {useNavigate} from "react-router"
 import { motion } from "framer-motion"
+import { FileText, Mic, BarChart, Trophy } from "lucide-react"
+import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
-import { FileText, Mic, BarChart, Trophy, Menu } from "lucide-react"
+import { useNavigate } from "react-router"
 
 export default function Dashboard() {
-  const navigate = useNavigate()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   let theme = "dark";
 
-  const menuItems = [
-    { name: "Challenges", icon: Trophy, route: "/app/challenges" },
-    { name: "Profile", icon: FileText, route: "/app/profile" },
-    { name: "Settings", icon: BarChart, route: "/app/settings" },
-  ]
+  const navigate = useNavigate();
 
   const features = [
     { name: "Prepare", icon: FileText, description: "Create and organize your content", route: "/app/prepare" },
@@ -28,50 +22,7 @@ export default function Dashboard() {
     <div
       className={`min-h-screen ${theme === "dark" ? "bg-gradient-to-br from-black via-gray-900 to-teal-900 text-gray-200" : "bg-gradient-to-br from-gray-100 via-teal-50 to-cyan-100 text-gray-800"}`}
     >
-      <header className="p-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1
-            className={`text-3xl font-bold ${theme === "dark" ? "text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-400" : "text-teal-700"}`}
-          >
-            PresentPro
-          </h1>
-          <div className="flex items-center space-x-2">
-            {/* <ThemeToggle /> */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`${theme === "dark" ? "text-gray-300 hover:text-teal-300" : "text-gray-600 hover:text-teal-700"}`}
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {isMenuOpen && (
-        <motion.nav
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className={`absolute top-20 right-6 ${theme === "dark" ? "bg-gray-800 text-gray-200" : "bg-white text-gray-800"} rounded-lg shadow-lg p-4 z-10`}
-        >
-          <ul>
-            {menuItems.map((item) => (
-              <li key={item.name} className="mb-2">
-                <Button
-                  variant="ghost"
-                  className={`w-full justify-start ${theme === "dark" ? "text-gray-200 hover:text-teal-300" : "text-gray-800 hover:text-teal-700"}`}
-                  onClick={() => navigate(item.route)}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.name}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </motion.nav>
-      )}
+      <Header theme={theme} />
 
       <main className="max-w-7xl mx-auto py-12 px-6">
         <h2

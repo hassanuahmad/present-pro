@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mic, Square, RefreshCw } from "lucide-react"
 import { RealtimeTranscriber } from "assemblyai/streaming"
 import RecordRTC from "recordrtc"
+import { Header } from "@/components/Header"
 
 const fillerWords = ["um", "uh", "like", "you know", "actually", "basically", "literally"]
 
@@ -219,8 +220,10 @@ export default function LivePracticeMode() {
         theme === "dark"
           ? "bg-gradient-to-br from-black via-gray-900 to-teal-900 text-gray-200"
           : "bg-gradient-to-br from-gray-100 via-teal-50 to-cyan-100 text-gray-800"
-      } p-6`}
+      }`}
     >
+      <Header theme={theme} />
+      <div className="p-6">
       <Card className={`max-w-4xl mx-auto ${theme === "dark" ? "bg-gray-800" : "bg-white"}`}>
         <CardHeader>
           <CardTitle
@@ -231,22 +234,14 @@ export default function LivePracticeMode() {
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center mb-4">
-            {/* <Button onClick={toggleRecording} variant={isRecording ? "destructive" : "default"}>
-              {isRecording ? <MicOff className="mr-2 h-4 w-4" /> : <Mic className="mr-2 h-4 w-4" />}
-              {isRecording ? "Stop Recording" : "Start Recording"}
-            </Button> */}
             <Button onClick={isRecording ? endTranscription : startTranscription} variant="outline" className="flex items-center gap-2">
                     {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                     {isRecording ? "Stop Recording" : "Start Recording"}
-                </Button>
+            </Button>
             <div className="text-lg font-semibold">
               Filler Words: <span className="text-red-500">{fillerCount}</span>
             </div>
             <div className="flex items-center space-x-2">
-              {/* <ThemeToggle /> */}
-              {/* <Button onClick={() => toggleTheme()} variant="outline" size="sm">
-                {theme === "dark" ? "Light Mode" : "Dark Mode"}
-              </Button> */}
               <Button onClick={resetPractice} variant="outline">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Reset
@@ -276,25 +271,10 @@ export default function LivePracticeMode() {
                 {word}
               </span>
             )) : "Transcript will appear here"}
-            {/* {transcript.split(" ").map((word, index) => (
-              <span
-                key={index}
-                className={
-                  fillerWords.includes(word.toLowerCase())
-                    ? theme === "dark"
-                      ? "text-red-400 font-bold"
-                      : "text-red-600 font-bold"
-                    : theme === "dark"
-                      ? "text-gray-300"
-                      : "text-gray-800"
-                }
-              >
-                {word}{" "}
-              </span>
-            ))} */}
           </div>
         </CardContent>
       </Card>
+    </div>
     </div>
   )
 }

@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {useNavigate} from "react-router"
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Mic, BarChart, Trophy, ArrowRight } from "lucide-react"
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
+import { Mic, BarChart, Trophy } from "lucide-react"
+import { Header } from "@/components/Header"
+import { useNavigate } from "react-router"
+import { Button } from "./components/ui/button"
+import { ArrowRight } from "lucide-react"
 
 export default function LandingPage() {
-  const navigate = useNavigate()
   let theme = "dark"
+  const navigate = useNavigate()
   const [scrollY, setScrollY] = useState(0)
 
   useEffect(() => {
@@ -32,31 +33,7 @@ export default function LandingPage() {
     <div
       className={`min-h-screen ${theme === "dark" ? "bg-gradient-to-br from-black via-gray-900 to-teal-900 text-gray-200" : "bg-gradient-to-br from-gray-100 via-teal-50 to-cyan-100 text-gray-800"}`}
     >
-      <header className="p-6">
-        <nav className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1
-            className={`text-3xl font-bold ${theme === "dark" ? "text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-400" : "text-teal-700"}`}
-          >
-            PresentPro
-          </h1>
-          <div className="flex items-center space-x-4">
-            <SignedOut>
-              <SignInButton />
-            </SignedOut>
-            <SignedIn>
-              <div className="flex items-center space-x-4">
-                <Button
-                  onClick={() => navigate("/dashboard")}
-                  className={`${theme === "dark" ? "bg-teal-500 hover:bg-teal-600" : "bg-teal-600 hover:bg-teal-700"} text-white`}
-                >
-                  Dashboard
-                </Button>
-                <UserButton />
-              </div>
-            </SignedIn>
-          </div>
-        </nav>
-      </header>
+      <Header theme={theme} />
 
       <main className="max-w-7xl mx-auto py-12 px-6">
         <section className="text-center mb-24">
